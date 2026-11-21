@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Check, Home, PackageCheck, Search, Truck } from 'lucide-react';
+import { motion } from 'motion/react';
 import { formatINR } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { OrderRecord, OrderStatusStep, PageRoute } from '../types';
 import { ResilientImage } from './ResilientImage';
 
@@ -202,8 +204,26 @@ export function OrderTrackingView({
 
             {/* 4-Step Dispatch Timeline */}
             <div className="py-8">
+              <div className="mb-6">
+                <div className="flex items-center justify-between text-xs font-label text-on-surface-muted mb-2">
+                  <span>Dispatch Progress</span>
+                  <span className="tabular-nums font-medium text-on-surface">
+                    Stage {matchedOrder.statusStep} of 4
+                  </span>
+                </div>
+                <div className="h-1 w-full bg-outline-variant rounded-xs overflow-hidden">
+                  <motion.div
+                    key={matchedOrder.orderNumber}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: matchedOrder.statusStep / 4 }}
+                    transition={{ duration: 0.75, ease: SILK_EASE }}
+                    className="h-full bg-primary origin-left"
+                  />
+                </div>
+              </div>
+
               <ol className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {TIMELINE_STEPS.map((item) => {
+                {TIMELINE_STEPS.map((item, idx) => {
                   const Icon = item.icon;
                   const isCompleted = matchedOrder.statusStep > item.step;
                   const isCurrent = matchedOrder.statusStep === item.step;
@@ -215,14 +235,17 @@ export function OrderTrackingView({
                       : 'Upcoming';
 
                   return (
-                    <li
-                      key={item.step}
+                    <motion.li
+                      key={`${matchedOrder.orderNumber}-${item.step}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: isActiveOrDone ? 1 : 0.75, y: 0 }}
+                      transition={{ duration: 0.45, delay: idx * 0.08, ease: SILK_EASE }}
                       className={`flex flex-col gap-3 p-4 rounded-sm border ${
                         isCurrent
                           ? 'border-primary bg-surface'
                           : isCompleted
                             ? 'border-outline bg-surface-white'
-                            : 'border-outline-variant bg-surface-white/60 opacity-75'
+                            : 'border-outline-variant bg-surface-white/60'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -259,7 +282,7 @@ export function OrderTrackingView({
                           {item.detail}
                         </p>
                       </div>
-                    </li>
+                    </motion.li>
                   );
                 })}
               </ol>

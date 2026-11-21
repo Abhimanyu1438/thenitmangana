@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Check } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { BagDrawer } from './components/BagDrawer';
 import { CheckoutView } from './components/CheckoutView';
 import { CollectionView } from './components/CollectionView';
@@ -16,6 +18,7 @@ import { PrivateStylingView } from './components/PrivateStylingView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { SearchOverlay } from './components/SearchOverlay';
 import { PRODUCTS, SAMPLE_ORDERS } from './data/catalog';
+import { SILK_EASE } from './lib/motion';
 import {
   BagItem,
   FinishingOption,
@@ -132,6 +135,18 @@ export default function App() {
 
   const [bagDrawerOpen, setBagDrawerOpen] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
+  const [toast, setToast] = useState<{ id: number; message: string; actionLabel?: string } | null>(
+    null
+  );
+  const toastTimerRef = useRef<number | null>(null);
+
+  const showToast = (message: string, actionLabel?: string) => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast({ id: Date.now(), message, actionLabel });
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
+  };
 
   useEffect(() => {
     try {
@@ -200,9 +215,18 @@ export default function App() {
   };
 
   const handleToggleWishlist = (productId: string) => {
+    const product = PRODUCTS.find((p) => p.id === productId);
+    const alreadySaved = wishlistIds.includes(productId);
     setWishlistIds((prev) =>
-      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+      alreadySaved ? prev.filter((id) => id !== productId) : [...prev, productId]
     );
+    if (product) {
+      showToast(
+        alreadySaved
+          ? `Removed ${product.name} from Saved Weaves`
+          : `Saved ${product.name} to Wishlist`
+      );
+    }
   };
 
   const handleAddToBag = (
@@ -284,135 +308,167 @@ export default function App() {
   const activeProduct =
     PRODUCTS.find((p) => p.id === selectedProductId) || PRODUCTS[0];
 
+  const viewKey = route === 'product' ? `product-${activeProduct.id}` : route;
+
   return (
-    <div className="min-h-screen flex flex-col bg-surface text-on-surface font-body">
-      <Header
-        currentRoute={route}
-        bagCount={bagCount}
-        onNavigate={handleNavigate}
-        onOpenBag={() => setBagDrawerOpen(true)}
-        onOpenSearch={() => setSearchOverlayOpen(true)}
-      />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen flex flex-col bg-surface text-on-surface font-body">
+        <Header
+          currentRoute={route}
+          bagCount={bagCount}
+          onNavigate={handleNavigate}
+          onOpenBag={() => setBagDrawerOpen(true)}
+          onOpenSearch={() => setSearchOverlayOpen(true)}
+        />
 
-      <main className="flex-1">
-        {route === 'home' && (
-          <HomeView
-            wishlistIds={wishlistIds}
-            onToggleWishlist={handleToggleWishlist}
-            onQuickAdd={handleQuickAdd}
-            onSelectProduct={handleSelectProduct}
-            onNavigate={handleNavigate}
-          />
-        )}
+        <main className="flex-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={viewKey}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.26, ease: SILK_EASE }}
+            >
+              {route === 'home' && (
+                <HomeView
+                  wishlistIds={wishlistIds}
+                  onToggleWishlist={handleToggleWishlist}
+                  onQuickAdd={handleQuickAdd}
+                  onSelectProduct={handleSelectProduct}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-        {route === 'collection' && (
-          <CollectionView
-            selectedWeaves={selectedWeaves}
-            selectedPalettes={selectedPalettes}
-            selectedOccasions={selectedOccasions}
-            searchQuery={searchQuery}
-            wishlistIds={wishlistIds}
-            onChangeWeaves={setSelectedWeaves}
-            onChangePalettes={setSelectedPalettes}
-            onChangeOccasions={setSelectedOccasions}
-            onClearSearch={() => setSearchQuery('')}
-            onResetAllFilters={() => {
-              setSelectedWeaves([]);
-              setSelectedPalettes([]);
-              setSelectedOccasions([]);
-              setSearchQuery('');
-            }}
-            onToggleWishlist={handleToggleWishlist}
-            onQuickAdd={handleQuickAdd}
-            onSelectProduct={handleSelectProduct}
-          />
-        )}
+              {route === 'collection' && (
+                <CollectionView
+                  selectedWeaves={selectedWeaves}
+                  selectedPalettes={selectedPalettes}
+                  selectedOccasions={selectedOccasions}
+                  searchQuery={searchQuery}
+                  wishlistIds={wishlistIds}
+                  onChangeWeaves={setSelectedWeaves}
+                  onChangePalettes={setSelectedPalettes}
+                  onChangeOccasions={setSelectedOccasions}
+                  onClearSearch={() => setSearchQuery('')}
+                  onResetAllFilters={() => {
+                    setSelectedWeaves([]);
+                    setSelectedPalettes([]);
+                    setSelectedOccasions([]);
+                    setSearchQuery('');
+                  }}
+                  onToggleWishlist={handleToggleWishlist}
+                  onQuickAdd={handleQuickAdd}
+                  onSelectProduct={handleSelectProduct}
+                />
+              )}
 
-        {route === 'product' && (
-          <ProductDetailView
-            key={activeProduct.id}
-            product={activeProduct}
-            wishlistIds={wishlistIds}
-            onToggleWishlist={handleToggleWishlist}
-            onAddToBag={handleAddToBag}
-            onQuickAdd={handleQuickAdd}
-            onSelectProduct={handleSelectProduct}
-            onNavigate={handleNavigate}
-          />
-        )}
+              {route === 'product' && (
+                <ProductDetailView
+                  key={activeProduct.id}
+                  product={activeProduct}
+                  wishlistIds={wishlistIds}
+                  onToggleWishlist={handleToggleWishlist}
+                  onAddToBag={handleAddToBag}
+                  onQuickAdd={handleQuickAdd}
+                  onSelectProduct={handleSelectProduct}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-        {route === 'checkout' && (
-          <CheckoutView
-            items={bagItems}
-            onUpdateQty={handleUpdateQty}
-            onRemoveItem={handleRemoveItem}
-            onPlaceOrder={handlePlaceOrder}
-            onTrackOrder={(orderNumber) => {
-              setTrackedOrderId(orderNumber);
-              setRoute('tracking');
-              scrollToTop();
-            }}
-            onNavigate={handleNavigate}
-          />
-        )}
+              {route === 'checkout' && (
+                <CheckoutView
+                  items={bagItems}
+                  onUpdateQty={handleUpdateQty}
+                  onRemoveItem={handleRemoveItem}
+                  onPlaceOrder={handlePlaceOrder}
+                  onTrackOrder={(orderNumber) => {
+                    setTrackedOrderId(orderNumber);
+                    setRoute('tracking');
+                    scrollToTop();
+                  }}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-        {route === 'tracking' && (
-          <OrderTrackingView
-            orders={orders}
-            initialOrderId={trackedOrderId}
-            onNavigate={handleNavigate}
-          />
-        )}
+              {route === 'tracking' && (
+                <OrderTrackingView
+                  orders={orders}
+                  initialOrderId={trackedOrderId}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-        {route === 'styling' && (
-          <PrivateStylingView
-            lastAppointment={lastAppointment}
-            onBookAppointment={handleBookAppointment}
-            onNavigate={handleNavigate}
-          />
-        )}
+              {route === 'styling' && (
+                <PrivateStylingView
+                  lastAppointment={lastAppointment}
+                  onBookAppointment={handleBookAppointment}
+                  onNavigate={handleNavigate}
+                />
+              )}
 
-        {route === 'journal' && (
-          <JournalView
-            activeIssueId={activeIssueId}
-            wishlistIds={wishlistIds}
-            onSelectIssue={setActiveIssueId}
-            onToggleWishlist={handleToggleWishlist}
-            onQuickAdd={handleQuickAdd}
-            onSelectProduct={handleSelectProduct}
-          />
-        )}
-      </main>
+              {route === 'journal' && (
+                <JournalView
+                  activeIssueId={activeIssueId}
+                  wishlistIds={wishlistIds}
+                  onSelectIssue={setActiveIssueId}
+                  onToggleWishlist={handleToggleWishlist}
+                  onQuickAdd={handleQuickAdd}
+                  onSelectProduct={handleSelectProduct}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      <Footer onNavigate={handleNavigate} />
+        <Footer onNavigate={handleNavigate} />
 
-      <BagDrawer
-        open={bagDrawerOpen}
-        items={bagItems}
-        onClose={() => setBagDrawerOpen(false)}
-        onUpdateQty={handleUpdateQty}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={() => {
-          setBagDrawerOpen(false);
-          handleNavigate('checkout');
-        }}
-        onExploreCollection={() => handleNavigate('collection')}
-      />
+        <BagDrawer
+          open={bagDrawerOpen}
+          items={bagItems}
+          onClose={() => setBagDrawerOpen(false)}
+          onUpdateQty={handleUpdateQty}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={() => {
+            setBagDrawerOpen(false);
+            handleNavigate('checkout');
+          }}
+          onExploreCollection={() => handleNavigate('collection')}
+        />
 
-      <SearchOverlay
-        open={searchOverlayOpen}
-        onClose={() => setSearchOverlayOpen(false)}
-        onSelectProduct={handleSelectProduct}
-        onSelectJournal={(issueId) => handleNavigate('journal', { issueId })}
-        onViewAllResults={(q) => {
-          setSearchQuery(q);
-          setSelectedWeaves([]);
-          setSelectedOccasions([]);
-          setSelectedPalettes([]);
-          setRoute('collection');
-          scrollToTop();
-        }}
-      />
-    </div>
+        <SearchOverlay
+          open={searchOverlayOpen}
+          onClose={() => setSearchOverlayOpen(false)}
+          onSelectProduct={handleSelectProduct}
+          onSelectJournal={(issueId) => handleNavigate('journal', { issueId })}
+          onViewAllResults={(q) => {
+            setSearchQuery(q);
+            setSelectedWeaves([]);
+            setSelectedOccasions([]);
+            setSelectedPalettes([]);
+            setRoute('collection');
+            scrollToTop();
+          }}
+        />
+
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.28, ease: SILK_EASE }}
+              role="status"
+              aria-live="polite"
+              className="fixed bottom-5 right-5 z-50 bg-surface-walnut text-on-surface-walnut border border-accent/40 px-4 py-3 rounded-sm shadow-lg flex items-center gap-3 max-w-sm"
+            >
+              <Check className="w-4 h-4 text-accent shrink-0" />
+              <span className="font-body text-sm">{toast.message}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </MotionConfig>
   );
 }

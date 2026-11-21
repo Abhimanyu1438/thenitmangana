@@ -1,4 +1,6 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { JOURNAL_ISSUES, PRODUCTS } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { Product } from '../types';
 import { ProductCard } from './ProductCard';
 import { ResilientImage } from './ResilientImage';
@@ -44,13 +46,20 @@ export function JournalView({
                   type="button"
                   onClick={() => onSelectIssue(j.id)}
                   aria-pressed={active}
-                  className={`px-3.5 py-2 rounded-sm font-label text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  className={`relative px-3.5 py-2 rounded-sm font-label text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                     active
-                      ? 'bg-surface-walnut text-on-surface-walnut'
+                      ? 'text-on-surface-walnut'
                       : 'bg-surface text-on-surface-muted hover:text-on-surface'
                   }`}
                 >
-                  {j.issueLabel}
+                  {active && (
+                    <motion.span
+                      layoutId="journal-issue-active"
+                      transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+                      className="absolute inset-0 bg-surface-walnut rounded-sm"
+                    />
+                  )}
+                  <span className="relative z-10">{j.issueLabel}</span>
                 </button>
               );
             })}
@@ -59,7 +68,14 @@ export function JournalView({
       </div>
 
       {/* Editorial Article */}
-      <article>
+      <AnimatePresence mode="wait">
+        <motion.article
+          key={issue.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.35, ease: SILK_EASE }}
+        >
         <header className="max-w-4xl mx-auto px-5 md:px-8 pt-12 md:pt-16 pb-8 text-center flex flex-col items-center gap-4">
           <span className="font-label text-[13px] font-medium text-primary">
             {issue.issueLabel}
@@ -116,7 +132,8 @@ export function JournalView({
             {issue.closingParagraph}
           </p>
         </div>
-      </article>
+        </motion.article>
+      </AnimatePresence>
 
       {/* Featured Weaves From Essay */}
       <section className="bg-surface-white py-14 md:py-16 border-t border-outline-variant">

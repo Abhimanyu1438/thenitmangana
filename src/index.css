@@ -63,3 +63,29 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes atelier-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.atelier-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(220, 203, 181, 0.25) 0%,
+    rgba(247, 241, 231, 0.55) 50%,
+    rgba(220, 203, 181, 0.25) 100%
+  );
+  background-size: 200% 100%;
+  animation: atelier-shimmer 2.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atelier-shimmer {
+    animation: none;
+  }
+}

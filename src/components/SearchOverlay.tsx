@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { JOURNAL_ISSUES, PRODUCTS, formatINR } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { ResilientImage } from './ResilientImage';
 
 interface SearchOverlayProps {
@@ -44,17 +46,28 @@ export function SearchOverlay({
     );
   }, [query]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 md:pt-20 px-4">
-      <div className="fixed inset-0 bg-deep-ink/60" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Search The Nitmagnaa Weaves"
-        className="relative z-10 bg-surface-white text-on-surface border border-outline rounded-sm w-full max-w-3xl p-6 md:p-8 shadow-xl max-h-[80vh] overflow-y-auto"
-      >
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 md:pt-20 px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="fixed inset-0 bg-deep-ink/60"
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search The Nitmagnaa Weaves"
+            initial={{ opacity: 0, y: -10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.985 }}
+            transition={{ duration: 0.28, ease: SILK_EASE }}
+            className="relative z-10 bg-surface-white text-on-surface border border-outline rounded-sm w-full max-w-3xl p-6 md:p-8 shadow-xl max-h-[80vh] overflow-y-auto"
+          >
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -170,7 +183,9 @@ export function SearchOverlay({
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   );
 }

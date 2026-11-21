@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   OCCASION_FILTERS,
   PALETTE_FILTERS,
   PRODUCTS,
   WEAVE_FILTERS,
 } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { OccasionKey, PaletteKey, Product, WeaveKey } from '../types';
 import { ProductCard } from './ProductCard';
 
@@ -285,54 +287,76 @@ export function CollectionView({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isWishlisted={wishlistIds.includes(product.id)}
-                  onToggleWishlist={onToggleWishlist}
-                  onQuickAdd={onQuickAdd}
-                  onSelectProduct={onSelectProduct}
-                />
-              ))}
-            </div>
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <AnimatePresence mode="popLayout">
+                {filteredProducts.map((product) => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.35, ease: SILK_EASE }}
+                  >
+                    <ProductCard
+                      product={product}
+                      isWishlisted={wishlistIds.includes(product.id)}
+                      onToggleWishlist={onToggleWishlist}
+                      onQuickAdd={onQuickAdd}
+                      onSelectProduct={onSelectProduct}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </div>
 
       {/* Mobile Filter Drawer */}
-      {mobileFiltersOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
-          <div
-            className="fixed inset-0 bg-deep-ink/60"
-            onClick={() => setMobileFiltersOpen(false)}
-          />
-          <div className="relative z-10 w-80 max-w-[85vw] bg-surface-white h-full p-6 overflow-y-auto flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-outline-variant">
-                <span className="font-headline text-xl text-on-surface">Filter Collection</span>
-                <button
-                  type="button"
-                  onClick={() => setMobileFiltersOpen(false)}
-                  aria-label="Close filters"
-                  className="w-10 h-10 flex items-center justify-center"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              {filterRailContent}
-            </div>
-            <button
-              type="button"
+      <AnimatePresence>
+        {mobileFiltersOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 bg-deep-ink/60"
               onClick={() => setMobileFiltersOpen(false)}
-              className="mt-6 w-full min-h-[48px] bg-primary text-on-primary rounded-sm font-label text-sm font-medium"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.35, ease: SILK_EASE }}
+              className="relative z-10 w-80 max-w-[85vw] bg-surface-white h-full p-6 overflow-y-auto flex flex-col justify-between shadow-2xl"
             >
-              Show {filteredProducts.length} Pieces
-            </button>
+              <div>
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-outline-variant">
+                  <span className="font-headline text-xl text-on-surface">Filter Collection</span>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(false)}
+                    aria-label="Close filters"
+                    className="w-10 h-10 flex items-center justify-center"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                {filterRailContent}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                className="mt-6 w-full min-h-[48px] bg-primary text-on-primary rounded-sm font-label text-sm font-medium"
+              >
+                Show {filteredProducts.length} Pieces
+              </button>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

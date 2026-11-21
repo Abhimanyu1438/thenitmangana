@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { IMAGES } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { PageRoute } from '../types';
 import { ResilientImage } from './ResilientImage';
 
@@ -153,47 +155,57 @@ export function Footer({ onNavigate }: FooterProps) {
         </div>
       </div>
 
-      {activeTopic && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deep-ink/60"
-          onClick={() => setActiveTopic(null)}
-        >
-          <div
-            className="bg-surface-white text-on-surface border border-outline rounded-sm max-w-lg w-full p-8 flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {activeTopic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-deep-ink/60"
+            onClick={() => setActiveTopic(null)}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
-              <h3 className="font-headline text-2xl text-on-surface">
-                {CARE_TOPICS[activeTopic].title}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveTopic(null)}
-                aria-label="Close guide"
-                className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-surface"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {CARE_TOPICS[activeTopic].body.map((p) => (
-                <p key={p} className="font-body text-sm text-on-surface-muted leading-relaxed">
-                  {p}
-                </p>
-              ))}
-            </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveTopic(null)}
-                className="min-h-[44px] px-6 bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.985 }}
+              transition={{ duration: 0.28, ease: SILK_EASE }}
+              className="bg-surface-white text-on-surface border border-outline rounded-sm max-w-lg w-full p-8 flex flex-col gap-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
+                <h3 className="font-headline text-2xl text-on-surface">
+                  {CARE_TOPICS[activeTopic].title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveTopic(null)}
+                  aria-label="Close guide"
+                  className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-surface"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                {CARE_TOPICS[activeTopic].body.map((p) => (
+                  <p key={p} className="font-body text-sm text-on-surface-muted leading-relaxed">
+                    {p}
+                  </p>
+                ))}
+              </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTopic(null)}
+                  className="min-h-[44px] px-6 bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </footer>
   );
 }

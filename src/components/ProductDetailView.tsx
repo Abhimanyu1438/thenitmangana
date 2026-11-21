@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Check, Heart, Plus, ShoppingBag, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { IMAGES, PRODUCTS, formatINR } from '../data/catalog';
+import { SILK_EASE } from '../lib/motion';
 import { FinishingOption, PageRoute, Product } from '../types';
 import { ProductCard } from './ProductCard';
 import { ResilientImage } from './ResilientImage';
@@ -84,9 +86,12 @@ export function ProductDetailView({
         {/* Left 7 Columns: Gallery */}
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {galleryFrames.map((frame, i) => (
-            <button
+            <motion.button
               key={i}
               type="button"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.07, ease: SILK_EASE }}
               onClick={() => setLightboxImage({ src: frame.src, alt: frame.alt })}
               className={`${
                 frame.span ? 'sm:col-span-2 aspect-[4/3]' : 'aspect-[3/4]'
@@ -95,9 +100,9 @@ export function ProductDetailView({
               <ResilientImage
                 src={frame.src}
                 alt={frame.alt}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
               />
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -296,28 +301,41 @@ export function ProductDetailView({
       </section>
 
       {/* Image Lightbox */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-50 bg-deep-ink/85 flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          <button
-            type="button"
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.24 }}
+            className="fixed inset-0 z-50 bg-deep-ink/85 flex items-center justify-center p-4"
             onClick={() => setLightboxImage(null)}
-            aria-label="Close image preview"
-            className="absolute top-6 right-6 w-11 h-11 rounded-sm bg-surface-white text-on-surface flex items-center justify-center"
           >
-            <X className="w-5 h-5" />
-          </button>
-          <div className="max-w-3xl max-h-[85vh] overflow-hidden rounded-sm">
-            <ResilientImage
-              src={lightboxImage.src}
-              alt={lightboxImage.alt}
-              className="max-h-[85vh] w-auto object-contain"
-            />
-          </div>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              aria-label="Close image preview"
+              className="absolute top-6 right-6 w-11 h-11 rounded-sm bg-surface-white text-on-surface flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.3, ease: SILK_EASE }}
+              className="max-w-3xl max-h-[85vh] overflow-hidden rounded-sm shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ResilientImage
+                src={lightboxImage.src}
+                alt={lightboxImage.alt}
+                className="max-h-[85vh] w-auto object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ResilientImageProps {
   src: string;
@@ -6,6 +6,7 @@ interface ResilientImageProps {
   className?: string;
   loading?: 'lazy' | 'eager';
   rootMargin?: string;
+  revealOnLoad?: boolean;
 }
 
 export function ResilientImage({
@@ -14,15 +15,22 @@ export function ResilientImage({
   className = '',
   loading = 'lazy',
   rootMargin = '300px',
+  revealOnLoad = true,
 }: ResilientImageProps) {
   const placeholderRef = useRef<HTMLDivElement | null>(null);
   const [isNearViewport, setIsNearViewport] = useState(
     () => typeof IntersectionObserver === 'undefined'
   );
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  const hasCustomOpacity = /\bopacity-0\b/.test(className);
+  const isLogoOrContain = /\bobject-contain\b/.test(className);
+  const useFadeReveal = revealOnLoad && !hasCustomOpacity;
 
   useEffect(() => {
     setFailed(false);
+    setLoaded(false);
   }, [src]);
 
   useEffect(() => {
@@ -47,6 +55,12 @@ export function ResilientImage({
     return () => observer.disconnect();
   }, [isNearViewport, rootMargin]);
 
+  const imgRef = useCallback((node: HTMLImageElement | null) => {
+    if (node && node.complete && node.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, []);
+
   if (failed) {
     return (
       <div
@@ -69,20 +83,24 @@ export function ResilientImage({
         role="img"
         aria-label={alt}
         data-lazy-status="pending"
-        className={`min-w-[1px] min-h-[1px] ${className}`}
+        className={`min-w-[1px] min-h-[1px] ${isLogoOrContain ? '' : 'atelier-shimmer'} ${className}`}
       />
     );
   }
 
   return (
     <img
+      ref={imgRef}
       src={src}
       alt={alt}
       loading={loading}
       decoding="async"
       referrerPolicy="no-referrer"
+      onLoad={() => setLoaded(true)}
       onError={() => setFailed(true)}
-      className={className}
+      className={`${useFadeReveal ? (loaded ? 'opacity-100' : 'opacity-0') : ''} ${className} ${
+        useFadeReveal ? 'transition-[opacity,transform] duration-500 ease-out' : ''
+      }`}
     />
   );
 }

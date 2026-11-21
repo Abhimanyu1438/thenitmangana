@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Product } from '../types';
 import { formatINR } from '../data/catalog';
 import { ResilientImage } from './ResilientImage';
@@ -22,6 +23,8 @@ export function ProductCard({
   showInteractiveControls = true,
 }: ProductCardProps) {
   const [loadBackImage, setLoadBackImage] = useState(false);
+  const [selectedShadeIndex, setSelectedShadeIndex] = useState(0);
+  const activeShade = product.shades[selectedShadeIndex] || product.shades[0];
 
   return (
     <article
@@ -40,13 +43,14 @@ export function ProductCard({
           <ResilientImage
             src={product.frontImage}
             alt={`${product.name} front drape`}
-            className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] group-hover:opacity-0"
           />
           {loadBackImage && (
             <ResilientImage
               src={product.backImage}
               alt={`${product.name} pallu detail`}
-              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              revealOnLoad={false}
+              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-[1.03]"
             />
           )}
         </button>
@@ -68,23 +72,31 @@ export function ProductCard({
               isWishlisted ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`
             }
             aria-pressed={isWishlisted}
-            className={`absolute top-2.5 right-2.5 w-11 h-11 rounded-full bg-surface-white flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
+            className={`absolute top-2.5 right-2.5 w-11 h-11 rounded-full bg-surface-white/95 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
               isWishlisted ? 'text-primary' : 'text-on-surface hover:text-primary'
             }`}
           >
-            <Heart className="w-[18px] h-[18px]" fill={isWishlisted ? 'currentColor' : 'none'} />
+            <motion.span
+              key={isWishlisted ? 'saved' : 'unsaved'}
+              initial={{ scale: 0.78 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+              className="inline-flex items-center justify-center"
+            >
+              <Heart className="w-[18px] h-[18px]" fill={isWishlisted ? 'currentColor' : 'none'} />
+            </motion.span>
           </button>
         )}
 
         {showInteractiveControls && (
-          <div className="absolute inset-x-4 bottom-4 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-200">
+          <div className="absolute inset-x-4 bottom-4 opacity-0 translate-y-1.5 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-300 ease-out">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onQuickAdd(product);
               }}
-              className="w-full min-h-[44px] bg-surface-white text-on-surface border border-outline rounded-sm font-label text-[13px] font-medium hover:bg-primary hover:text-on-primary hover:border-primary transition-colors whitespace-nowrap shrink-0"
+              className="w-full min-h-[44px] bg-surface-white/95 text-on-surface border border-outline rounded-sm font-label text-[13px] font-medium hover:bg-primary hover:text-on-primary hover:border-primary transition-colors whitespace-nowrap shrink-0"
             >
               Quick Add
             </button>
@@ -109,17 +121,33 @@ export function ProductCard({
       </header>
 
       {showInteractiveControls && (
-        <footer className="mt-2 flex items-center gap-2">
-          {product.shades.map((shade, idx) => (
-            <span
-              key={shade.name}
-              title={shade.name}
-              style={{ backgroundColor: shade.hex }}
-              className={`w-3.5 h-3.5 rounded-full border ${
-                idx === 0 ? 'border-on-surface' : 'border-outline'
-              }`}
-            />
-          ))}
+        <footer className="mt-2.5 flex items-center gap-2 min-h-[20px]">
+          <div className="flex items-center gap-2" role="group" aria-label={`Available shades for ${product.name}`}>
+            {product.shades.map((shade, idx) => {
+              const selected = idx === selectedShadeIndex;
+              return (
+                <button
+                  key={shade.name}
+                  type="button"
+                  onClick={() => setSelectedShadeIndex(idx)}
+                  aria-label={`Preview ${shade.name} shade`}
+                  aria-pressed={selected}
+                  title={shade.name}
+                  style={{ backgroundColor: shade.hex }}
+                  className={`w-3.5 h-3.5 rounded-full transition-transform duration-200 ${
+                    selected
+                      ? 'ring-1 ring-offset-2 ring-on-surface scale-110'
+                      : 'border border-outline hover:scale-110'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          {activeShade && (
+            <span className="font-label text-[11px] text-on-surface-muted truncate ml-1">
+              · {activeShade.name}
+            </span>
+          )}
         </footer>
       )}
     </article>
