@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #F7F1E7;
+  --color-surface-white: #FFFFFF;
+  --color-surface-sand: #DCCBB5;
+  --color-surface-walnut: #4A2F20;
+  --color-surface-dark: #241814;
+
+  --color-on-surface: #241814;
+  --color-on-surface-muted: #5C4B41;
+  --color-on-surface-sand: #241814;
+  --color-on-surface-walnut: #F7F1E7;
+  --color-on-surface-dark: #F7F1E7;
+
+  --color-primary: #7A4631;
+  --color-primary-hover: #5E3423;
+  --color-on-primary: #FFFFFF;
+
+  --color-secondary: #4A2F20;
+  --color-accent: #B38A5D;
+  --color-tertiary: #686B55;
+
+  --color-terracotta: #7A4631;
+  --color-walnut-brown: #4A2F20;
+  --color-deep-ink: #241814;
+  --color-warm-ivory: #F7F1E7;
+  --color-sand-beige: #DCCBB5;
+  --color-antique-gold: #B38A5D;
+  --color-muted-olive: #686B55;
+
+  --color-outline: #C7B6A1;
+  --color-outline-variant: #E6DDD0;
+  --color-error: #93000A;
+
+  --font-display: "Gelasio", Georgia, serif;
+  --font-headline: "Gelasio", Georgia, serif;
+  --font-body: "Commissioner", system-ui, -apple-system, sans-serif;
+  --font-title: "Commissioner", system-ui, -apple-system, sans-serif;
+  --font-label: "Commissioner", system-ui, -apple-system, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #F7F1E7;
+    color: #241814;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

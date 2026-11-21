@@ -1,0 +1,6 @@
+{
+  "name": "The Nitmagnaa Weaves",
+  "description": "Contemporary Indian handloom luxury storefront for raw Bhagalpur tussar, Dhakai jamdani, silk organza, and Kanchipuram weaves.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
