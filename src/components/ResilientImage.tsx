@@ -1,13 +1,51 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ResilientImageProps {
   src: string;
   alt: string;
   className?: string;
+  loading?: 'lazy' | 'eager';
+  rootMargin?: string;
 }
 
-export function ResilientImage({ src, alt, className = '' }: ResilientImageProps) {
+export function ResilientImage({
+  src,
+  alt,
+  className = '',
+  loading = 'lazy',
+  rootMargin = '300px',
+}: ResilientImageProps) {
+  const placeholderRef = useRef<HTMLDivElement | null>(null);
+  const [isNearViewport, setIsNearViewport] = useState(
+    () => typeof IntersectionObserver === 'undefined'
+  );
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  useEffect(() => {
+    if (isNearViewport) return;
+    const node = placeholderRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setIsNearViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isNearViewport, rootMargin]);
 
   if (failed) {
     return (
@@ -24,10 +62,24 @@ export function ResilientImage({ src, alt, className = '' }: ResilientImageProps
     );
   }
 
+  if (!isNearViewport) {
+    return (
+      <div
+        ref={placeholderRef}
+        role="img"
+        aria-label={alt}
+        data-lazy-status="pending"
+        className={`min-w-[1px] min-h-[1px] ${className}`}
+      />
+    );
+  }
+
   return (
     <img
       src={src}
       alt={alt}
+      loading={loading}
+      decoding="async"
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
       className={className}

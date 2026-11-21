@@ -55,11 +55,11 @@ export function HomeView({
   return (
     <div>
       {/* 1. Cinematic Full-Screen Hero */}
-      <section className="relative min-h-[600px] lg:min-h-[760px] flex items-end bg-surface-dark overflow-hidden">
+      <section className="relative min-h-[540px] lg:min-h-[calc(100vh-98px)] lg:max-h-[760px] flex items-end bg-surface-dark overflow-hidden">
         <ResilientImage
           src={IMAGES.heroCampaign}
           alt="Model draped in a sculptural terracotta and warm ivory handwoven tussar silk saree in a sunlit travertine courtyard"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-[center_12%]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-deep-ink/70 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-deep-ink/95 via-deep-ink/65 to-deep-ink/20" />

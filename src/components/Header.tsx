@@ -23,7 +23,7 @@ export function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItemClass = (active: boolean) =>
-    `font-label text-sm font-medium whitespace-nowrap shrink-0 transition-colors py-1 border-b ${
+    `font-label text-sm lg:text-[15px] font-medium whitespace-nowrap shrink-0 transition-colors py-1 border-b ${
       active
         ? 'text-accent border-accent'
         : 'text-on-surface-walnut border-transparent hover:text-accent hover:border-accent/60'
@@ -37,7 +37,7 @@ export function Header({
   return (
     <>
       {showAnnouncement && (
-        <div className="bg-surface-walnut text-on-surface-walnut min-h-[36px] py-2 px-4 border-b border-outline/20 relative flex items-center justify-center">
+        <div className="bg-surface-walnut text-on-surface-walnut min-h-[30px] py-1 px-4 border-b border-outline/20 relative flex items-center justify-center">
           <p className="font-label text-xs tracking-wide text-center pr-8 truncate">
             Autumn–Winter 2026: The Raw Tussar &amp; Kanchipuram Edit — Complimentary Global Express Shipping
           </p>
@@ -45,97 +45,104 @@ export function Header({
             type="button"
             onClick={() => setShowAnnouncement(false)}
             aria-label="Dismiss announcement"
-            className="absolute right-3 w-7 h-7 flex items-center justify-center text-on-surface-walnut/80 hover:text-on-surface-walnut transition-colors"
+            className="absolute right-3 w-6 h-6 flex items-center justify-center text-on-surface-walnut/80 hover:text-on-surface-walnut transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      <header className="sticky top-0 z-40 bg-surface-walnut text-on-surface-walnut border-b border-outline/20">
-        <div className="max-w-[1360px] mx-auto px-5 md:px-8 min-h-[76px] md:min-h-[84px] py-3 flex items-center justify-between gap-4 md:gap-8">
-          {/* Mobile menu trigger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open navigation menu"
-            className="md:hidden w-11 h-11 flex items-center justify-center rounded-sm hover:text-accent transition-colors shrink-0"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+      <header className="sticky top-0 z-40 bg-surface-walnut text-on-surface-walnut border-b border-on-surface-walnut/15">
+        <div className="max-w-[1360px] mx-auto px-4 md:px-8 h-[62px] md:h-[68px] grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">
+          {/* Zone 1: Left (Mobile menu trigger / Desktop split nav) */}
+          <div className="justify-self-start flex items-center">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+              className="md:hidden w-11 h-11 flex items-center justify-center rounded-sm hover:text-accent transition-colors shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-          {/* Zone 1 (Desktop Left Nav) */}
-          <nav className="hidden md:flex items-center gap-6" aria-label="Primary navigation">
-            <button
-              type="button"
-              onClick={() => onNavigate('collection')}
-              className={navItemClass(currentRoute === 'collection')}
-            >
-              Collection
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('collection', { weave: 'tussar' })}
-              className={navItemClass(false)}
-            >
-              Weaves
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('collection', { occasion: 'Bridal Trousseau' })}
-              className={navItemClass(false)}
-            >
-              Occasions
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('journal')}
-              className={navItemClass(currentRoute === 'journal')}
-            >
-              Journal
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('styling')}
-              className={navItemClass(currentRoute === 'styling')}
-            >
-              Private Styling
-            </button>
-          </nav>
+            <nav className="hidden md:flex items-center gap-6 lg:gap-7" aria-label="Primary navigation">
+              <button
+                type="button"
+                onClick={() => onNavigate('collection')}
+                className={navItemClass(currentRoute === 'collection')}
+              >
+                Collection
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('collection', { weave: 'tussar' })}
+                className={navItemClass(false)}
+              >
+                Weaves
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('collection', { occasion: 'Bridal Trousseau' })}
+                className={navItemClass(false)}
+              >
+                Occasions
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('journal')}
+                className={navItemClass(currentRoute === 'journal')}
+              >
+                Journal
+              </button>
+            </nav>
+          </div>
 
-          {/* Zone 2: Brand Wordmark */}
+          {/* Zone 2: Mathematically Centered Brand Wordmark */}
           <button
             type="button"
             onClick={() => onNavigate('home')}
             aria-label="The Nitmagnaa Weaves Home"
-            className="inline-flex items-center justify-center px-2 shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
+            className="justify-self-center inline-flex items-center justify-center h-[52px] md:h-[60px] overflow-hidden px-1 sm:px-2 shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded-sm transition-opacity hover:opacity-90"
           >
             <ResilientImage
               src={IMAGES.logo}
               alt="The Nitmagnaa Weaves"
-              className="w-[172px] md:w-[220px] h-auto object-contain"
+              className="w-[164px] sm:w-[216px] md:w-[260px] h-auto object-contain"
             />
           </button>
 
-          {/* Zone 3: Search & Bag */}
-          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Zone 3: Right (Private Styling + Search + Bag) */}
+          <div className="justify-self-end flex items-center gap-1 md:gap-5 shrink-0">
             <button
               type="button"
-              onClick={onOpenSearch}
-              aria-label="Search weaves"
-              className="w-11 h-11 flex items-center justify-center rounded-sm hover:text-accent transition-colors"
+              onClick={() => onNavigate('styling')}
+              className={`hidden md:inline-block ${navItemClass(currentRoute === 'styling')}`}
             >
-              <Search className="w-[18px] h-[18px]" />
+              Private Styling
             </button>
-            <button
-              type="button"
-              onClick={onOpenBag}
-              aria-label={`Open shopping bag, ${bagCount} items`}
-              className="inline-flex items-center gap-1.5 min-h-[44px] px-2.5 rounded-sm hover:text-accent transition-colors whitespace-nowrap shrink-0"
-            >
-              <ShoppingBag className="w-[18px] h-[18px]" />
-              <span className="font-label text-xs font-medium tabular-nums">{bagCount}</span>
-            </button>
+            <span
+              aria-hidden="true"
+              className="hidden md:block h-4 w-px bg-on-surface-walnut/20"
+            />
+            <div className="flex items-center gap-0.5 md:gap-2">
+              <button
+                type="button"
+                onClick={onOpenSearch}
+                aria-label="Search weaves"
+                className="w-10 h-11 md:w-11 flex items-center justify-center rounded-sm hover:text-accent transition-colors"
+              >
+                <Search className="w-[19px] h-[19px]" />
+              </button>
+              <button
+                type="button"
+                onClick={onOpenBag}
+                aria-label={`Open shopping bag, ${bagCount} items`}
+                className="inline-flex items-center gap-1.5 min-h-[44px] px-2 md:px-2.5 rounded-sm hover:text-accent transition-colors whitespace-nowrap shrink-0"
+              >
+                <ShoppingBag className="w-[19px] h-[19px]" />
+                <span className="font-label text-[13px] font-medium tabular-nums">{bagCount}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -206,6 +213,13 @@ export function Header({
                   className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent"
                 >
                   Private Styling
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMobileNav('tracking')}
+                  className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent"
+                >
+                  Track Order
                 </button>
               </nav>
             </div>

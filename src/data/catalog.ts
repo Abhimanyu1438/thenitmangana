@@ -1,4 +1,4 @@
-import { JournalIssue, OccasionKey, PaletteKey, Product, WeaveKey } from '../types';
+import { JournalIssue, OccasionKey, OrderRecord, PaletteKey, Product, WeaveKey } from '../types';
 
 export const IMAGES = {
   logo: 'https://lh3.googleusercontent.com/aida/ALJJyrAY5_vqxT9VK9fXM6fJJY4fMsP8wA4pkQkI9nDPRlO836H1HzkQR7NA0qWjAVOwGeIXDwxcYwtJ8PGoURL65EwmAA-fS0bUPF4Kn0jm8X6xxAQrRlS_Jo3bZOcICBI8MiX-lY4ZKKhAetVQhZQBfEbYERjEGh5wuDXPM-fprN4KHVu-P082T8ybdzVHPaHaFWci-pxM9Gp6GbcD6zAcZ4FaY2Peuz8TUqlpra3IjDUP0CFBO_ge9QdpvSc3r8kI9PJgNk46zQ',
@@ -380,6 +380,40 @@ export const CLIENT_REVIEWS = [
     meta: 'London · Verified Buyer',
     image: IMAGES.catOrganza,
     alt: 'Client Devika M. wearing Kavya Ivory Jamdani',
+  },
+];
+
+export const SAMPLE_ORDERS: OrderRecord[] = [
+  {
+    orderNumber: 'NMW-1042',
+    placedAt: '19 November 2026',
+    customerName: 'Ananya Rao',
+    email: 'ananya.rao@studio.in',
+    address: '14 Carmichael Road, Malabar Hill',
+    city: 'Mumbai',
+    pinCode: '400026',
+    paymentMethod: 'Card / NetBanking / UPI',
+    items: [
+      {
+        key: 'ira-raw-tussar::Terracotta Clay::fall-pico',
+        productId: 'ira-raw-tussar',
+        name: 'Ira Raw Tussar Saree',
+        subtitle: 'Handspun Bhagalpur Tussar',
+        sku: 'NMW-TS-042',
+        image: IMAGES.iraFront,
+        shadeName: 'Terracotta Clay',
+        finishing: 'fall-pico',
+        unitPrice: 43500,
+        quantity: 1,
+      },
+    ],
+    subtotal: 43500,
+    discount: 0,
+    total: 43500,
+    statusStep: 3,
+    courier: 'Blue Dart Insured Air',
+    trackingNumber: 'BD-88412094IN',
+    estimatedDelivery: '24 November 2026',
   },
 ];
 

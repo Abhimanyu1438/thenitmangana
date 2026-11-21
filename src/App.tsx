@@ -11,10 +11,11 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { JournalView } from './components/JournalView';
+import { OrderTrackingView } from './components/OrderTrackingView';
 import { PrivateStylingView } from './components/PrivateStylingView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { SearchOverlay } from './components/SearchOverlay';
-import { PRODUCTS } from './data/catalog';
+import { PRODUCTS, SAMPLE_ORDERS } from './data/catalog';
 import {
   BagItem,
   FinishingOption,
@@ -31,6 +32,7 @@ const STORAGE_KEYS = {
   bag: 'nitmagnaa_bag_v1',
   wishlist: 'nitmagnaa_wishlist_v1',
   appointment: 'nitmagnaa_appointment_v1',
+  orders: 'nitmagnaa_orders_v1',
 };
 
 const DEFAULT_BAG_ITEM: BagItem = {
@@ -85,6 +87,29 @@ function loadInitialAppointment(): StylingAppointment | null {
   return null;
 }
 
+function loadInitialOrders(): OrderRecord[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.orders);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const valid = parsed.filter(
+          (item): item is OrderRecord =>
+            Boolean(item && item.orderNumber && Array.isArray(item.items) && item.statusStep)
+        );
+        const existingNumbers = new Set(valid.map((o) => o.orderNumber));
+        const missingSamples = SAMPLE_ORDERS.filter(
+          (s) => !existingNumbers.has(s.orderNumber)
+        );
+        return [...valid, ...missingSamples];
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return SAMPLE_ORDERS;
+}
+
 export default function App() {
   const [route, setRoute] = useState<PageRoute>('home');
   const [selectedProductId, setSelectedProductId] = useState<string>(PRODUCTS[0].id);
@@ -99,6 +124,10 @@ export default function App() {
   const [wishlistIds, setWishlistIds] = useState<string[]>(loadInitialWishlist);
   const [lastAppointment, setLastAppointment] = useState<StylingAppointment | null>(
     loadInitialAppointment
+  );
+  const [orders, setOrders] = useState<OrderRecord[]>(loadInitialOrders);
+  const [trackedOrderId, setTrackedOrderId] = useState<string>(
+    () => loadInitialOrders()[0]?.orderNumber || 'NMW-1042'
   );
 
   const [bagDrawerOpen, setBagDrawerOpen] = useState(false);
@@ -119,6 +148,14 @@ export default function App() {
       // ignore
     }
   }, [wishlistIds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
+    } catch {
+      // ignore
+    }
+  }, [orders]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -148,6 +185,9 @@ export default function App() {
     }
     if (opts?.issueId) {
       setActiveIssueId(opts.issueId);
+    }
+    if (nextRoute === 'tracking') {
+      setTrackedOrderId(orders[0]?.orderNumber || 'NMW-1042');
     }
     setRoute(nextRoute);
     scrollToTop();
@@ -217,7 +257,12 @@ export default function App() {
     setBagItems((prev) => prev.filter((item) => item.key !== key));
   };
 
-  const handlePlaceOrder = (_order: OrderRecord) => {
+  const handlePlaceOrder = (order: OrderRecord) => {
+    setOrders((prev) => [
+      order,
+      ...prev.filter((o) => o.orderNumber !== order.orderNumber),
+    ]);
+    setTrackedOrderId(order.orderNumber);
     setBagItems([]);
   };
 
@@ -302,6 +347,19 @@ export default function App() {
             onUpdateQty={handleUpdateQty}
             onRemoveItem={handleRemoveItem}
             onPlaceOrder={handlePlaceOrder}
+            onTrackOrder={(orderNumber) => {
+              setTrackedOrderId(orderNumber);
+              setRoute('tracking');
+              scrollToTop();
+            }}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {route === 'tracking' && (
+          <OrderTrackingView
+            orders={orders}
+            initialOrderId={trackedOrderId}
             onNavigate={handleNavigate}
           />
         )}

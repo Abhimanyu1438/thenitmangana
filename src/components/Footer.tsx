@@ -50,7 +50,7 @@ export function Footer({ onNavigate }: FooterProps) {
               <ResilientImage
                 src={IMAGES.logo}
                 alt="The Nitmagnaa Weaves"
-                className="w-[210px] h-auto object-contain"
+                className="w-[210px] min-h-[42px] h-auto object-contain"
               />
             </button>
             <p className="font-body text-sm text-on-surface-walnut/80 max-w-xs leading-relaxed">
@@ -92,6 +92,13 @@ export function Footer({ onNavigate }: FooterProps) {
 
           <div className="md:col-span-3 flex flex-col gap-2.5">
             <h3 className="font-label text-[13px] font-medium text-surface-sand mb-1">Client Care</h3>
+            <button
+              type="button"
+              onClick={() => onNavigate('tracking')}
+              className="text-left font-body text-sm hover:text-surface-sand transition-colors"
+            >
+              Track Order
+            </button>
             <button
               type="button"
               onClick={() => onNavigate('styling')}

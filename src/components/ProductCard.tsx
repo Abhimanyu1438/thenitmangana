@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Product } from '../types';
 import { formatINR } from '../data/catalog';
@@ -20,8 +21,15 @@ export function ProductCard({
   onSelectProduct,
   showInteractiveControls = true,
 }: ProductCardProps) {
+  const [loadBackImage, setLoadBackImage] = useState(false);
+
   return (
-    <article className="group flex flex-col">
+    <article
+      className="group flex flex-col"
+      onMouseEnter={() => setLoadBackImage(true)}
+      onFocus={() => setLoadBackImage(true)}
+      onTouchStart={() => setLoadBackImage(true)}
+    >
       <div className="relative aspect-[3/4] bg-surface-sand rounded-sm overflow-hidden mb-4">
         <button
           type="button"
@@ -34,11 +42,13 @@ export function ProductCard({
             alt={`${product.name} front drape`}
             className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0"
           />
-          <ResilientImage
-            src={product.backImage}
-            alt={`${product.name} pallu detail`}
-            className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          />
+          {loadBackImage && (
+            <ResilientImage
+              src={product.backImage}
+              alt={`${product.name} pallu detail`}
+              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            />
+          )}
         </button>
 
         {showInteractiveControls && product.tag && (

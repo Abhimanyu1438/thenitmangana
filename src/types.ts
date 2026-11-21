@@ -4,7 +4,8 @@ export type PageRoute =
   | 'product'
   | 'checkout'
   | 'styling'
-  | 'journal';
+  | 'journal'
+  | 'tracking';
 
 export type WeaveKey = 'tussar' | 'kanchipuram' | 'jamdani' | 'chanderi' | 'organza';
 
@@ -71,6 +72,8 @@ export interface JournalIssue {
   featuredProductIds: string[];
 }
 
+export type OrderStatusStep = 1 | 2 | 3 | 4;
+
 export interface OrderRecord {
   orderNumber: string;
   placedAt: string;
@@ -84,6 +87,10 @@ export interface OrderRecord {
   subtotal: number;
   discount: number;
   total: number;
+  statusStep: OrderStatusStep;
+  courier: string;
+  trackingNumber: string;
+  estimatedDelivery: string;
 }
 
 export interface StylingAppointment {

@@ -9,6 +9,7 @@ interface CheckoutViewProps {
   onUpdateQty: (key: string, delta: number) => void;
   onRemoveItem: (key: string) => void;
   onPlaceOrder: (order: OrderRecord) => void;
+  onTrackOrder: (orderNumber: string) => void;
   onNavigate: (route: PageRoute) => void;
 }
 
@@ -17,6 +18,7 @@ export function CheckoutView({
   onUpdateQty,
   onRemoveItem,
   onPlaceOrder,
+  onTrackOrder,
   onNavigate,
 }: CheckoutViewProps) {
   const [firstName, setFirstName] = useState('Ananya');
@@ -59,7 +61,10 @@ export function CheckoutView({
     e.preventDefault();
     if (items.length === 0) return;
 
-    const orderNumber = 'NMW-' + String(Math.floor(1040 + Math.random() * 8900));
+    const orderNumber = 'NMW-' + String(Math.floor(1043 + Math.random() * 8900));
+    const etaDate = new Date();
+    etaDate.setDate(etaDate.getDate() + 5);
+
     const record: OrderRecord = {
       orderNumber,
       placedAt: new Date().toLocaleDateString('en-IN', {
@@ -77,6 +82,14 @@ export function CheckoutView({
       subtotal,
       discount,
       total,
+      statusStep: 2,
+      courier: 'Blue Dart Insured Air',
+      trackingNumber: 'BD-' + String(Math.floor(10000000 + Math.random() * 89999999)) + 'IN',
+      estimatedDelivery: etaDate.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
     };
 
     setConfirmedOrder(record);
@@ -178,15 +191,22 @@ export function CheckoutView({
           <div className="pt-2 flex flex-wrap gap-3">
             <button
               type="button"
+              onClick={() => onTrackOrder(confirmedOrder.orderNumber)}
+              className="min-h-[44px] px-6 bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
+            >
+              Track This Order
+            </button>
+            <button
+              type="button"
               onClick={() => onNavigate('collection')}
-              className="min-h-[44px] px-6 bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors"
+              className="min-h-[44px] px-6 border border-on-surface bg-surface-white text-on-surface rounded-sm font-label text-sm font-medium hover:bg-surface transition-colors whitespace-nowrap"
             >
               Continue Exploring Collection
             </button>
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className="min-h-[44px] px-6 border border-outline bg-surface text-on-surface rounded-sm font-label text-sm font-medium hover:border-on-surface transition-colors"
+              className="min-h-[44px] px-6 border border-outline bg-surface text-on-surface rounded-sm font-label text-sm font-medium hover:border-on-surface transition-colors whitespace-nowrap"
             >
               Return Home
             </button>
