@@ -289,17 +289,16 @@ export function CollectionView({
           ) : (
             <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               <AnimatePresence mode="popLayout">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, idx) => (
                   <motion.div
                     key={product.id}
                     layout
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.35, ease: SILK_EASE }}
+                    transition={{ duration: 0.3, ease: SILK_EASE }}
                   >
                     <ProductCard
                       product={product}
+                      revealIndex={idx % 3}
                       isWishlisted={wishlistIds.includes(product.id)}
                       onToggleWishlist={onToggleWishlist}
                       onQuickAdd={onQuickAdd}

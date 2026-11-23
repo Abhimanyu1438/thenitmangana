@@ -234,26 +234,23 @@ export function HomeView({
             </div>
           </motion.div>
 
-          <motion.div
+          <div
             ref={newArrivalsRef}
-            variants={staggerContainerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VIEWPORT_ONCE}
             className="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[46%] lg:grid-flow-row lg:grid-cols-4 gap-6 overflow-x-auto lg:overflow-visible no-scrollbar snap-x snap-mandatory"
           >
-            {newArrivals.map((product) => (
-              <motion.div key={product.id} variants={cardStaggerItemVariants} className="snap-start">
+            {newArrivals.map((product, idx) => (
+              <div key={product.id} className="snap-start">
                 <ProductCard
                   product={product}
+                  revealIndex={idx % 4}
                   isWishlisted={wishlistIds.includes(product.id)}
                   onToggleWishlist={onToggleWishlist}
                   onQuickAdd={onQuickAdd}
                   onSelectProduct={onSelectProduct}
                 />
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -558,26 +555,20 @@ export function HomeView({
             </button>
           </motion.div>
 
-          <motion.div
-            variants={staggerContainerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={VIEWPORT_ONCE}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            {bestsellers.map((product) => (
-              <motion.div key={product.id} variants={cardStaggerItemVariants}>
-                <ProductCard
-                  product={product}
-                  isWishlisted={wishlistIds.includes(product.id)}
-                  onToggleWishlist={onToggleWishlist}
-                  onQuickAdd={onQuickAdd}
-                  onSelectProduct={onSelectProduct}
-                  showInteractiveControls={false}
-                />
-              </motion.div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {bestsellers.map((product, idx) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                revealIndex={idx % 4}
+                isWishlisted={wishlistIds.includes(product.id)}
+                onToggleWishlist={onToggleWishlist}
+                onQuickAdd={onQuickAdd}
+                onSelectProduct={onSelectProduct}
+                showInteractiveControls={false}
+              />
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 

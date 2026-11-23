@@ -5,7 +5,10 @@ export type PageRoute =
   | 'checkout'
   | 'styling'
   | 'journal'
-  | 'tracking';
+  | 'tracking'
+  | 'account'
+  | 'support'
+  | 'saved';
 
 export type WeaveKey = 'tussar' | 'kanchipuram' | 'jamdani' | 'chanderi' | 'organza';
 
@@ -76,6 +79,7 @@ export type OrderStatusStep = 1 | 2 | 3 | 4;
 
 export interface OrderRecord {
   orderNumber: string;
+  userId?: string | null;
   placedAt: string;
   customerName: string;
   email: string;
@@ -83,6 +87,7 @@ export interface OrderRecord {
   city: string;
   pinCode: string;
   paymentMethod: string;
+  giftMessage?: string;
   items: BagItem[];
   subtotal: number;
   discount: number;
@@ -102,4 +107,29 @@ export interface StylingAppointment {
   name: string;
   email: string;
   notes: string;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  pinCode?: string;
+  createdAt: string;
+}
+
+export interface SupportQueryRecord {
+  id: string;
+  ticketNumber: string;
+  userId?: string | null;
+  name: string;
+  email: string;
+  orderNumber?: string;
+  category: string;
+  message: string;
+  channel: 'whatsapp' | 'atelier-desk';
+  status: 'Open' | 'In Review' | 'Resolved';
+  createdAt: string;
 }

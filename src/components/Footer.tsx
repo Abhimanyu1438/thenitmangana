@@ -86,16 +86,37 @@ export function Footer({ onNavigate }: FooterProps) {
             >
               Bridal Trousseau
             </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('saved')}
+              className="text-left font-body text-sm hover:text-surface-sand transition-colors"
+            >
+              Saved Weaves
+            </button>
           </div>
 
           <div className="md:col-span-3 flex flex-col gap-2.5">
             <h3 className="font-label text-[13px] font-medium text-surface-sand mb-1">Client Care</h3>
             <button
               type="button"
+              onClick={() => onNavigate('account')}
+              className="text-left font-body text-sm hover:text-surface-sand transition-colors"
+            >
+              Account &amp; Order History
+            </button>
+            <button
+              type="button"
               onClick={() => onNavigate('tracking')}
               className="text-left font-body text-sm hover:text-surface-sand transition-colors"
             >
               Track Order
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('support')}
+              className="text-left font-body text-sm hover:text-surface-sand transition-colors"
+            >
+              Contact Support &amp; Raise Query
             </button>
             <button
               type="button"

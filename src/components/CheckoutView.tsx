@@ -1,38 +1,66 @@
-import { useState } from 'react';
-import { CheckCircle2, Minus, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, MessageCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import { formatINR } from '../data/catalog';
-import { BagItem, OrderRecord, PageRoute } from '../types';
+import { createOrderOnServer } from '../lib/api';
+import { BagItem, OrderRecord, PageRoute, UserProfile } from '../types';
 import { ResilientImage } from './ResilientImage';
 
 interface CheckoutViewProps {
   items: BagItem[];
+  authToken: string | null;
+  currentUser: UserProfile | null;
   onUpdateQty: (key: string, delta: number) => void;
   onRemoveItem: (key: string) => void;
   onPlaceOrder: (order: OrderRecord) => void;
   onTrackOrder: (orderNumber: string) => void;
+  onRaiseOrderQuery: (order: OrderRecord) => void;
   onNavigate: (route: PageRoute) => void;
 }
 
 export function CheckoutView({
   items,
+  authToken,
+  currentUser,
   onUpdateQty,
   onRemoveItem,
   onPlaceOrder,
   onTrackOrder,
+  onRaiseOrderQuery,
   onNavigate,
 }: CheckoutViewProps) {
-  const [firstName, setFirstName] = useState('Ananya');
-  const [lastName, setLastName] = useState('Rao');
-  const [email, setEmail] = useState('ananya.rao@studio.in');
-  const [phone, setPhone] = useState('+91 98201 44120');
-  const [address, setAddress] = useState('14 Carmichael Road, Malabar Hill');
-  const [city, setCity] = useState('Mumbai');
-  const [pinCode, setPinCode] = useState('400026');
+  const defaultNameParts = (currentUser?.name || 'Ananya Rao').split(' ');
+  const [firstName, setFirstName] = useState(defaultNameParts[0] || 'Ananya');
+  const [lastName, setLastName] = useState(
+    defaultNameParts.slice(1).join(' ') || 'Rao'
+  );
+  const [email, setEmail] = useState(currentUser?.email || 'ananya.rao@studio.in');
+  const [phone, setPhone] = useState(currentUser?.phone || '+91 98201 44120');
+  const [address, setAddress] = useState(
+    currentUser?.address || '14 Carmichael Road, Malabar Hill'
+  );
+  const [city, setCity] = useState(currentUser?.city || 'Mumbai');
+  const [pinCode, setPinCode] = useState(currentUser?.pinCode || '400026');
   const [paymentMethod, setPaymentMethod] = useState('Card / NetBanking / UPI');
+  const [giftMessage, setGiftMessage] = useState('');
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderRecord | null>(null);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      const parts = currentUser.name.trim().split(' ');
+      if (parts[0]) setFirstName(parts[0]);
+      if (parts.length > 1) setLastName(parts.slice(1).join(' '));
+      if (currentUser.email) setEmail(currentUser.email);
+      if (currentUser.phone) setPhone(currentUser.phone);
+      if (currentUser.address) setAddress(currentUser.address);
+      if (currentUser.city) setCity(currentUser.city);
+      if (currentUser.pinCode) setPinCode(currentUser.pinCode);
+    }
+  }, [currentUser]);
 
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
@@ -57,43 +85,33 @@ export function CheckoutView({
     }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0) return;
+    if (items.length === 0 || submittingOrder) return;
+    setSubmitError(null);
+    setSubmittingOrder(true);
 
-    const orderNumber = 'NMW-' + String(Math.floor(1043 + Math.random() * 8900));
-    const etaDate = new Date();
-    etaDate.setDate(etaDate.getDate() + 5);
-
-    const record: OrderRecord = {
-      orderNumber,
-      placedAt: new Date().toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }),
-      customerName: `${firstName.trim()} ${lastName.trim()}`.trim(),
-      email: email.trim(),
-      address: address.trim(),
-      city: city.trim(),
-      pinCode: pinCode.trim(),
-      paymentMethod,
-      items: [...items],
-      subtotal,
-      discount,
-      total,
-      statusStep: 2,
-      courier: 'Blue Dart Insured Air',
-      trackingNumber: 'BD-' + String(Math.floor(10000000 + Math.random() * 89999999)) + 'IN',
-      estimatedDelivery: etaDate.toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }),
-    };
-
-    setConfirmedOrder(record);
-    onPlaceOrder(record);
+    try {
+      const { order } = await createOrderOnServer(authToken, {
+        customerName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        pinCode: pinCode.trim(),
+        paymentMethod,
+        promoCode: appliedPromo || undefined,
+        giftMessage: giftMessage.trim() || undefined,
+        items,
+      });
+      setConfirmedOrder(order);
+      onPlaceOrder(order);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'Unable to place order right now.'
+      );
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   if (confirmedOrder) {
@@ -140,6 +158,17 @@ export function CheckoutView({
               </p>
             </div>
           </div>
+
+          {confirmedOrder.giftMessage && (
+            <div className="p-4 bg-surface border border-outline-variant rounded-sm">
+              <h2 className="font-label text-xs font-medium text-on-surface-muted mb-1.5">
+                Gift Message / Special Instructions
+              </h2>
+              <p className="font-body text-sm text-on-surface whitespace-pre-line leading-relaxed">
+                {confirmedOrder.giftMessage}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h2 className="font-label text-xs font-medium text-on-surface-muted">
@@ -198,17 +227,18 @@ export function CheckoutView({
             </button>
             <button
               type="button"
+              onClick={() => onRaiseOrderQuery(confirmedOrder)}
+              className="min-h-[44px] px-6 border border-primary text-primary bg-surface-white rounded-sm font-label text-sm font-medium hover:bg-surface transition-colors inline-flex items-center gap-2 whitespace-nowrap"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Raise Query (WhatsApp)
+            </button>
+            <button
+              type="button"
               onClick={() => onNavigate('collection')}
               className="min-h-[44px] px-6 border border-on-surface bg-surface-white text-on-surface rounded-sm font-label text-sm font-medium hover:bg-surface transition-colors whitespace-nowrap"
             >
               Continue Exploring Collection
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
-              className="min-h-[44px] px-6 border border-outline bg-surface text-on-surface rounded-sm font-label text-sm font-medium hover:border-on-surface transition-colors whitespace-nowrap"
-            >
-              Return Home
             </button>
           </div>
         </div>
@@ -333,8 +363,41 @@ export function CheckoutView({
               </div>
             </section>
 
+            <section className="bg-surface-white border border-outline-variant rounded-sm p-6 md:p-8 flex flex-col gap-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-headline text-2xl text-on-surface">
+                  2. Gift Message &amp; Special Instructions
+                </h2>
+                <span className="font-label text-xs text-on-surface-muted">Optional</span>
+              </div>
+              <p className="font-body text-sm text-on-surface-muted leading-relaxed">
+                Include a personal gift note to be hand-lettered on linen stationery, or share Fall &amp; Pico tailoring measurements and delivery timing preferences.
+              </p>
+              <div>
+                <label
+                  htmlFor="checkout-gift-message"
+                  className="block font-label text-xs text-on-surface-muted mb-1.5"
+                >
+                  Gift Message / Tailoring Notes
+                </label>
+                <textarea
+                  id="checkout-gift-message"
+                  rows={3}
+                  maxLength={500}
+                  value={giftMessage}
+                  onChange={(e) => setGiftMessage(e.target.value)}
+                  placeholder="e.g. Please enclose a handwritten note: ‘Wishing you a joyful anniversary — Meera’. Requesting contrast piping on Fall & Pico finishing."
+                  className="w-full px-4 py-3 bg-surface border border-outline rounded-sm font-body text-sm text-on-surface placeholder:text-on-surface-muted/65 focus:bg-surface-white focus:border-primary focus:outline-none transition-colors resize-y"
+                />
+                <div className="mt-1.5 flex items-center justify-between text-[11px] font-label text-on-surface-muted">
+                  <span>Saved permanently to your order archive</span>
+                  <span className="tabular-nums">{giftMessage.length}/500</span>
+                </div>
+              </div>
+            </section>
+
             <section className="bg-surface-white border border-outline-variant rounded-sm p-6 md:p-8 flex flex-col gap-4">
-              <h2 className="font-headline text-2xl text-on-surface">2. Payment</h2>
+              <h2 className="font-headline text-2xl text-on-surface">3. Payment</h2>
               <div className="flex flex-col gap-3">
                 {[
                   { label: 'Card / NetBanking / UPI', note: 'Instant' },
@@ -489,11 +552,20 @@ export function CheckoutView({
               </div>
             </div>
 
+            {submitError && (
+              <p role="alert" className="font-body text-xs text-error">
+                {submitError}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full min-h-[48px] bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
+              disabled={submittingOrder}
+              className="w-full min-h-[48px] bg-primary text-on-primary rounded-sm font-label text-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap disabled:opacity-60"
             >
-              Complete Order · {formatINR(total)}
+              {submittingOrder
+                ? 'Confirming Order...'
+                : `Complete Order · ${formatINR(total)}`}
             </button>
           </aside>
         </form>

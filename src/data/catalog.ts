@@ -1,4 +1,4 @@
-import { JournalIssue, OccasionKey, OrderRecord, PaletteKey, Product, WeaveKey } from '../types';
+import type { JournalIssue, OccasionKey, OrderRecord, PaletteKey, Product, WeaveKey } from '../types.ts';
 
 export const IMAGES = {
   logo: '/assets/aistudio/weave_macro_texture_1795446721352.jpg',

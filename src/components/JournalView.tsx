@@ -140,10 +140,11 @@ export function JournalView({
         <div className="max-w-[1360px] mx-auto px-5 md:px-8">
           <h2 className="font-headline text-3xl text-on-surface mb-8">Featured in This Essay</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
-            {featuredProducts.map((product) => (
+            {featuredProducts.map((product, idx) => (
               <ProductCard
                 key={product.id}
                 product={product}
+                revealIndex={idx % 3}
                 isWishlisted={wishlistIds.includes(product.id)}
                 onToggleWishlist={onToggleWishlist}
                 onQuickAdd={onQuickAdd}

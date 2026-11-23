@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Check, Home, PackageCheck, Search, Truck } from 'lucide-react';
+import { Check, Home, MessageCircle, PackageCheck, Search, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatINR } from '../data/catalog';
+import { trackOrderOnServer } from '../lib/api';
 import { SILK_EASE } from '../lib/motion';
 import { OrderRecord, OrderStatusStep, PageRoute } from '../types';
 import { ResilientImage } from './ResilientImage';
 
 interface OrderTrackingViewProps {
   orders: OrderRecord[];
+  authToken: string | null;
+  isSignedIn: boolean;
   initialOrderId?: string;
+  onRaiseOrderQuery: (order: OrderRecord) => void;
   onNavigate: (route: PageRoute) => void;
 }
 
@@ -50,24 +54,54 @@ function normalizeOrderRef(value: string): string {
 
 export function OrderTrackingView({
   orders,
+  authToken,
+  isSignedIn,
   initialOrderId,
+  onRaiseOrderQuery,
   onNavigate,
 }: OrderTrackingViewProps) {
   const [queryInput, setQueryInput] = useState(initialOrderId || 'NMW-1042');
   const [searchedRef, setSearchedRef] = useState(
     normalizeOrderRef(initialOrderId || 'NMW-1042')
   );
+  const [remoteOrder, setRemoteOrder] = useState<OrderRecord | null>(null);
+  const [lookingUpRemote, setLookingUpRemote] = useState(false);
 
   useEffect(() => {
     if (initialOrderId) {
       setQueryInput(initialOrderId);
       setSearchedRef(normalizeOrderRef(initialOrderId));
+      setRemoteOrder(null);
     }
   }, [initialOrderId]);
 
-  const matchedOrder = orders.find(
+  const localMatch = orders.find(
     (order) => normalizeOrderRef(order.orderNumber) === searchedRef
   );
+
+  useEffect(() => {
+    if (!searchedRef || localMatch) {
+      setRemoteOrder(null);
+      return;
+    }
+    let cancelled = false;
+    setLookingUpRemote(true);
+    trackOrderOnServer(authToken, searchedRef)
+      .then(({ order }) => {
+        if (!cancelled) setRemoteOrder(order);
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteOrder(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLookingUpRemote(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchedRef, localMatch, authToken]);
+
+  const matchedOrder = localMatch || remoteOrder;
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +182,12 @@ export function OrderTrackingView({
             Enter an order reference ID above to view fulfillment progress.
           </p>
         </div>
+      ) : lookingUpRemote && !matchedOrder ? (
+        <div className="bg-surface-white border border-outline-variant rounded-sm p-10 text-center">
+          <p className="font-body text-sm text-on-surface-muted">
+            Locating order #{searchedRef} in our atelier ledger...
+          </p>
+        </div>
       ) : !matchedOrder ? (
         <div className="bg-surface-white border border-outline-variant rounded-sm p-8 md:p-10 flex flex-col items-start gap-4">
           <span className="font-mono text-xs text-error">Reference #{searchedRef} Not Found</span>
@@ -155,7 +195,7 @@ export function OrderTrackingView({
             We could not locate an order with that reference
           </h2>
           <p className="font-body text-sm text-on-surface-muted max-w-lg leading-relaxed">
-            Check the confirmation code from your receipt (formatted as <span className="font-mono text-on-surface">NMW-XXXX</span>), or load our sample dispatch record to preview the tracking timeline.
+            Check the confirmation code from your receipt (formatted as <span className="font-mono text-on-surface">NMW-XXXX</span>), sign in to view your saved order history, or load our sample dispatch record.
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <button
@@ -167,10 +207,10 @@ export function OrderTrackingView({
             </button>
             <button
               type="button"
-              onClick={() => onNavigate('collection')}
-              className="min-h-[44px] px-6 border border-outline bg-surface text-on-surface rounded-sm font-label text-sm font-medium hover:border-on-surface transition-colors"
+              onClick={() => onNavigate('account')}
+              className="min-h-[44px] px-6 border border-on-surface bg-surface-white text-on-surface rounded-sm font-label text-sm font-medium hover:bg-surface transition-colors"
             >
-              Explore Collection
+              {isSignedIn ? 'Open My Order History' : 'Sign In for Past Orders'}
             </button>
           </div>
         </div>
@@ -192,13 +232,23 @@ export function OrderTrackingView({
                 </h2>
               </div>
 
-              <div className="md:text-right">
-                <span className="block font-label text-xs text-on-surface-muted">
-                  Estimated Delivery
-                </span>
-                <span className="font-title text-base font-medium text-on-surface tabular-nums">
-                  {matchedOrder.estimatedDelivery}
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="md:text-right">
+                  <span className="block font-label text-xs text-on-surface-muted">
+                    Estimated Delivery
+                  </span>
+                  <span className="font-title text-base font-medium text-on-surface tabular-nums">
+                    {matchedOrder.estimatedDelivery}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRaiseOrderQuery(matchedOrder)}
+                  className="min-h-[42px] px-5 bg-primary text-on-primary rounded-sm font-label text-xs font-medium hover:bg-primary-hover transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Raise Query (WhatsApp)
+                </button>
               </div>
             </div>
 
@@ -316,6 +366,17 @@ export function OrderTrackingView({
                 <p className="font-body text-on-surface-muted">{matchedOrder.email}</p>
               </div>
             </div>
+
+            {matchedOrder.giftMessage && (
+              <div className="mt-5 p-4 bg-surface border border-outline-variant rounded-xs">
+                <h3 className="font-label text-xs font-medium text-on-surface-muted mb-1">
+                  Gift Message / Special Instructions
+                </h3>
+                <p className="font-body text-sm text-on-surface whitespace-pre-line leading-relaxed">
+                  {matchedOrder.giftMessage}
+                </p>
+              </div>
+            )}
           </section>
 
           {/* Itemized Receipt Card */}

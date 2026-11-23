@@ -287,10 +287,11 @@ export function ProductDetailView({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {relatedProducts.map((p) => (
+          {relatedProducts.map((p, idx) => (
             <ProductCard
               key={p.id}
               product={p}
+              revealIndex={idx % 4}
               isWishlisted={wishlistIds.includes(p.id)}
               onToggleWishlist={onToggleWishlist}
               onQuickAdd={onQuickAdd}

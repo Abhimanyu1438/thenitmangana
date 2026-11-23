@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { SILK_EASE } from '../lib/motion';
 import { PageRoute } from '../types';
@@ -8,6 +8,8 @@ import { BrandLogo } from './BrandLogo';
 interface HeaderProps {
   currentRoute: PageRoute;
   bagCount: number;
+  wishlistCount: number;
+  currentUserName?: string | null;
   onNavigate: (route: PageRoute, opts?: { weave?: string; occasion?: string }) => void;
   onOpenBag: () => void;
   onOpenSearch: () => void;
@@ -16,6 +18,8 @@ interface HeaderProps {
 export function Header({
   currentRoute,
   bagCount,
+  wishlistCount,
+  currentUserName,
   onNavigate,
   onOpenBag,
   onOpenSearch,
@@ -144,8 +148,8 @@ export function Header({
             <BrandLogo />
           </button>
 
-          {/* Zone 3: Right (Private Styling + Search + Bag) */}
-          <div className="justify-self-end flex items-center gap-1 md:gap-5 shrink-0">
+          {/* Zone 3: Right (Private Styling + Account + Search + Bag) */}
+          <div className="justify-self-end flex items-center gap-1 md:gap-4 shrink-0">
             <button
               type="button"
               onClick={() => onNavigate('styling')}
@@ -164,12 +168,53 @@ export function Header({
               aria-hidden="true"
               className="hidden md:block h-4 w-px bg-on-surface-walnut/20"
             />
-            <div className="flex items-center gap-0.5 md:gap-2">
+            <div className="flex items-center gap-0.5 md:gap-1.5">
+              <button
+                type="button"
+                onClick={() => onNavigate('account')}
+                aria-label={currentUserName ? `Account: ${currentUserName}` : 'Sign in or register'}
+                className={`inline-flex items-center gap-1.5 min-h-[44px] px-2 rounded-sm transition-colors whitespace-nowrap shrink-0 ${
+                  currentRoute === 'account'
+                    ? 'text-accent'
+                    : 'text-on-surface-walnut hover:text-accent'
+                }`}
+              >
+                <User className="w-[18px] h-[18px]" />
+                <span className="hidden lg:inline font-label text-[13px] font-medium max-w-[96px] truncate">
+                  {currentUserName ? currentUserName.split(' ')[0] : 'Sign In'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('saved')}
+                aria-label={`Open Saved Weaves, ${wishlistCount} items`}
+                className={`inline-flex items-center gap-1 min-h-[44px] px-2 rounded-sm transition-colors whitespace-nowrap shrink-0 ${
+                  currentRoute === 'saved'
+                    ? 'text-accent'
+                    : 'text-on-surface-walnut hover:text-accent'
+                }`}
+              >
+                <Heart
+                  className="w-[18px] h-[18px]"
+                  fill={currentRoute === 'saved' ? 'currentColor' : 'none'}
+                />
+                {wishlistCount > 0 && (
+                  <motion.span
+                    key={wishlistCount}
+                    initial={{ scale: 0.72, opacity: 0.6 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 22 }}
+                    className="font-label text-[13px] font-medium tabular-nums inline-block"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
+              </button>
               <button
                 type="button"
                 onClick={onOpenSearch}
                 aria-label="Search weaves"
-                className="w-10 h-11 md:w-11 flex items-center justify-center rounded-sm hover:text-accent transition-colors"
+                className="w-10 h-11 md:w-10 flex items-center justify-center rounded-sm hover:text-accent transition-colors"
               >
                 <Search className="w-[19px] h-[19px]" />
               </button>
@@ -177,7 +222,7 @@ export function Header({
                 type="button"
                 onClick={onOpenBag}
                 aria-label={`Open shopping bag, ${bagCount} items`}
-                className="inline-flex items-center gap-1.5 min-h-[44px] px-2 md:px-2.5 rounded-sm hover:text-accent transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 min-h-[44px] px-2 rounded-sm hover:text-accent transition-colors whitespace-nowrap shrink-0"
               >
                 <ShoppingBag className="w-[19px] h-[19px]" />
                 <motion.span
@@ -271,10 +316,31 @@ export function Header({
                   </button>
                   <button
                     type="button"
+                    onClick={() => handleMobileNav('saved')}
+                    className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent transition-colors"
+                  >
+                    Saved Weaves {wishlistCount > 0 ? `(${wishlistCount})` : ''}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleMobileNav('tracking')}
                     className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent transition-colors"
                   >
                     Track Order
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMobileNav('account')}
+                    className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent transition-colors"
+                  >
+                    {currentUserName ? `Account (${currentUserName.split(' ')[0]})` : 'Sign In / Register'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMobileNav('support')}
+                    className="min-h-[44px] text-left font-headline text-xl py-2 hover:text-accent transition-colors"
+                  >
+                    Contact Support
                   </button>
                 </nav>
               </div>

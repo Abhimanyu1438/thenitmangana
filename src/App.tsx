@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
+import { AccountView } from './components/AccountView';
 import { BagDrawer } from './components/BagDrawer';
 import { CheckoutView } from './components/CheckoutView';
 import { CollectionView } from './components/CollectionView';
@@ -13,11 +14,15 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { JournalView } from './components/JournalView';
+import { OrderQueryModal } from './components/OrderQueryModal';
 import { OrderTrackingView } from './components/OrderTrackingView';
 import { PrivateStylingView } from './components/PrivateStylingView';
 import { ProductDetailView } from './components/ProductDetailView';
+import { SavedWeavesView } from './components/SavedWeavesView';
 import { SearchOverlay } from './components/SearchOverlay';
+import { SupportView } from './components/SupportView';
 import { PRODUCTS, SAMPLE_ORDERS } from './data/catalog';
+import { fetchUserOrders, fetchUserSupportQueries } from './lib/api';
 import { SILK_EASE } from './lib/motion';
 import {
   BagItem,
@@ -28,6 +33,8 @@ import {
   PaletteKey,
   Product,
   StylingAppointment,
+  SupportQueryRecord,
+  UserProfile,
   WeaveKey,
 } from './types';
 
@@ -148,24 +155,39 @@ export default function App() {
   const [lastAppointment, setLastAppointment] = useState<StylingAppointment | null>(
     loadInitialAppointment
   );
-  const [orders, setOrders] = useState<OrderRecord[]>(loadInitialOrders);
+  const [localOrders, setLocalOrders] = useState<OrderRecord[]>(loadInitialOrders);
   const [trackedOrderId, setTrackedOrderId] = useState<string>(
     () => loadInitialOrders()[0]?.orderNumber || 'NMW-1042'
   );
 
+  // Authenticated client session held strictly in React state memory
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [accountOrders, setAccountOrders] = useState<OrderRecord[]>([]);
+  const [supportQueries, setSupportQueries] = useState<SupportQueryRecord[]>([]);
+  const [loadingAccountData, setLoadingAccountData] = useState(false);
+
+  const [queryModalOrder, setQueryModalOrder] = useState<OrderRecord | null>(null);
   const [bagDrawerOpen, setBagDrawerOpen] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
-  const [toast, setToast] = useState<{ id: number; message: string; actionLabel?: string } | null>(
-    null
-  );
+  const [toast, setToast] = useState<{
+    id: number;
+    message: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
-  const showToast = (message: string, actionLabel?: string) => {
+  const showToast = (
+    message: string,
+    actionLabel?: string,
+    onAction?: () => void
+  ) => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-    setToast({ id: Date.now(), message, actionLabel });
+    setToast({ id: Date.now(), message, actionLabel, onAction });
     toastTimerRef.current = window.setTimeout(() => {
       setToast(null);
-    }, 3200);
+    }, 3400);
   };
 
   useEffect(() => {
@@ -186,11 +208,45 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
+      localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(localOrders));
     } catch {
       // ignore
     }
-  }, [orders]);
+  }, [localOrders]);
+
+  useEffect(() => {
+    if (!authToken) {
+      setAccountOrders([]);
+      setSupportQueries([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingAccountData(true);
+    Promise.all([fetchUserOrders(authToken), fetchUserSupportQueries(authToken)])
+      .then(([ordersRes, queriesRes]) => {
+        if (cancelled) return;
+        setAccountOrders(ordersRes.orders);
+        setSupportQueries(queriesRes.queries);
+      })
+      .catch(() => {
+        // ignore transient errors; state remains safe
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAccountData(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken]);
+
+  const allTrackingOrders = useMemo(() => {
+    const map = new Map<string, OrderRecord>();
+    for (const o of accountOrders) map.set(o.orderNumber, o);
+    for (const o of localOrders) {
+      if (!map.has(o.orderNumber)) map.set(o.orderNumber, o);
+    }
+    return Array.from(map.values());
+  }, [accountOrders, localOrders]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -222,7 +278,7 @@ export default function App() {
       setActiveIssueId(opts.issueId);
     }
     if (nextRoute === 'tracking') {
-      setTrackedOrderId(orders[0]?.orderNumber || 'NMW-1042');
+      setTrackedOrderId(allTrackingOrders[0]?.orderNumber || 'NMW-1042');
     }
     setRoute(nextRoute);
     scrollToTop();
@@ -241,12 +297,50 @@ export default function App() {
       alreadySaved ? prev.filter((id) => id !== productId) : [...prev, productId]
     );
     if (product) {
-      showToast(
-        alreadySaved
-          ? `Removed ${product.name} from Saved Weaves`
-          : `Saved ${product.name} to Wishlist`
-      );
+      if (alreadySaved) {
+        showToast(`Removed ${product.name} from Saved Weaves`);
+      } else {
+        showToast(`Saved ${product.name} to Saved Weaves`, 'View List', () => {
+          setRoute('saved');
+          scrollToTop();
+        });
+      }
     }
+  };
+
+  const upsertBagItems = (
+    entries: {
+      product: Product;
+      shadeName: string;
+      finishing: FinishingOption;
+    }[]
+  ) => {
+    setBagItems((prev) => {
+      const next = [...prev];
+      for (const entry of entries) {
+        const unitPrice =
+          entry.product.price + (entry.finishing === 'fall-pico' ? 1500 : 0);
+        const key = `${entry.product.id}::${entry.shadeName}::${entry.finishing}`;
+        const idx = next.findIndex((item) => item.key === key);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        } else {
+          next.push({
+            key,
+            productId: entry.product.id,
+            name: entry.product.name,
+            subtitle: entry.product.subtitle,
+            sku: entry.product.sku,
+            image: entry.product.frontImage,
+            shadeName: entry.shadeName,
+            finishing: entry.finishing,
+            unitPrice,
+            quantity: 1,
+          });
+        }
+      }
+      return next;
+    });
   };
 
   const handleAddToBag = (
@@ -254,33 +348,42 @@ export default function App() {
     shadeName: string,
     finishing: FinishingOption
   ) => {
-    const unitPrice = product.price + (finishing === 'fall-pico' ? 1500 : 0);
-    const key = `${product.id}::${shadeName}::${finishing}`;
-
-    setBagItems((prev) => {
-      const existing = prev.find((item) => item.key === key);
-      if (existing) {
-        return prev.map((item) =>
-          item.key === key ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [
-        ...prev,
-        {
-          key,
-          productId: product.id,
-          name: product.name,
-          subtitle: product.subtitle,
-          sku: product.sku,
-          image: product.frontImage,
-          shadeName,
-          finishing,
-          unitPrice,
-          quantity: 1,
-        },
-      ];
-    });
+    upsertBagItems([{ product, shadeName, finishing }]);
     setBagDrawerOpen(true);
+  };
+
+  const handleMoveSavedToBag = (
+    product: Product,
+    shadeName: string,
+    finishing: FinishingOption
+  ) => {
+    upsertBagItems([{ product, shadeName, finishing }]);
+    setWishlistIds((prev) => prev.filter((id) => id !== product.id));
+    showToast(`Moved ${product.name} to Bag`, 'Open Bag', () => {
+      setBagDrawerOpen(true);
+    });
+  };
+
+  const handleMoveAllSavedToBag = (
+    items: {
+      product: Product;
+      shadeName: string;
+      finishing: FinishingOption;
+    }[]
+  ) => {
+    if (items.length === 0) return;
+    upsertBagItems(items);
+    const movedIds = new Set(items.map((i) => i.product.id));
+    setWishlistIds((prev) => prev.filter((id) => !movedIds.has(id)));
+    setBagDrawerOpen(true);
+    showToast(
+      `Moved ${items.length} ${items.length === 1 ? 'weave' : 'weaves'} to Bag`
+    );
+  };
+
+  const handleClearWishlist = () => {
+    setWishlistIds([]);
+    showToast('Cleared Saved Weaves');
   };
 
   const handleQuickAdd = (product: Product) => {
@@ -302,10 +405,16 @@ export default function App() {
   };
 
   const handlePlaceOrder = (order: OrderRecord) => {
-    setOrders((prev) => [
+    setLocalOrders((prev) => [
       order,
       ...prev.filter((o) => o.orderNumber !== order.orderNumber),
     ]);
+    if (authToken) {
+      setAccountOrders((prev) => [
+        order,
+        ...prev.filter((o) => o.orderNumber !== order.orderNumber),
+      ]);
+    }
     setTrackedOrderId(order.orderNumber);
     setBagItems([]);
   };
@@ -324,6 +433,25 @@ export default function App() {
     }
   };
 
+  const handleAuthSuccess = (token: string, user: UserProfile) => {
+    setAuthToken(token);
+    setCurrentUser(user);
+    showToast(`Signed in as ${user.name}`);
+  };
+
+  const handleSignOut = () => {
+    setAuthToken(null);
+    setCurrentUser(null);
+    setAccountOrders([]);
+    setSupportQueries([]);
+    showToast('Signed out of your atelier account');
+  };
+
+  const handleQueryLogged = (query: SupportQueryRecord) => {
+    setSupportQueries((prev) => [query, ...prev]);
+    showToast(`Support query ${query.ticketNumber} recorded`);
+  };
+
   const bagCount = bagItems.reduce((sum, item) => sum + item.quantity, 0);
   const activeProduct =
     PRODUCTS.find((p) => p.id === selectedProductId) || PRODUCTS[0];
@@ -336,6 +464,8 @@ export default function App() {
         <Header
           currentRoute={route}
           bagCount={bagCount}
+          wishlistCount={wishlistIds.length}
+          currentUserName={currentUser?.name || null}
           onNavigate={handleNavigate}
           onOpenBag={() => setBagDrawerOpen(true)}
           onOpenSearch={() => setSearchOverlayOpen(true)}
@@ -399,6 +529,8 @@ export default function App() {
               {route === 'checkout' && (
                 <CheckoutView
                   items={bagItems}
+                  authToken={authToken}
+                  currentUser={currentUser}
                   onUpdateQty={handleUpdateQty}
                   onRemoveItem={handleRemoveItem}
                   onPlaceOrder={handlePlaceOrder}
@@ -407,14 +539,56 @@ export default function App() {
                     setRoute('tracking');
                     scrollToTop();
                   }}
+                  onRaiseOrderQuery={(order) => setQueryModalOrder(order)}
                   onNavigate={handleNavigate}
                 />
               )}
 
               {route === 'tracking' && (
                 <OrderTrackingView
-                  orders={orders}
+                  orders={allTrackingOrders}
+                  authToken={authToken}
+                  isSignedIn={Boolean(currentUser)}
                   initialOrderId={trackedOrderId}
+                  onRaiseOrderQuery={(order) => setQueryModalOrder(order)}
+                  onNavigate={handleNavigate}
+                />
+              )}
+
+              {route === 'account' && (
+                <AccountView
+                  authToken={authToken}
+                  currentUser={currentUser}
+                  orders={accountOrders}
+                  supportQueries={supportQueries}
+                  loadingAccountData={loadingAccountData}
+                  onAuthSuccess={handleAuthSuccess}
+                  onProfileUpdated={(user) => {
+                    setCurrentUser(user);
+                    showToast('Client profile saved');
+                  }}
+                  onSignOut={handleSignOut}
+                  onTrackOrder={(orderNumber) => {
+                    setTrackedOrderId(orderNumber);
+                    setRoute('tracking');
+                    scrollToTop();
+                  }}
+                  onRaiseOrderQuery={(order) => setQueryModalOrder(order)}
+                  onSampleOrderAdded={(order) => {
+                    setAccountOrders((prev) => [order, ...prev]);
+                    showToast(`Sample order #${order.orderNumber} added to history`);
+                  }}
+                  onNavigate={handleNavigate}
+                />
+              )}
+
+              {route === 'support' && (
+                <SupportView
+                  authToken={authToken}
+                  currentUser={currentUser}
+                  orders={accountOrders.length > 0 ? accountOrders : allTrackingOrders}
+                  supportQueries={supportQueries}
+                  onQuerySubmitted={handleQueryLogged}
                   onNavigate={handleNavigate}
                 />
               )}
@@ -435,6 +609,21 @@ export default function App() {
                   onToggleWishlist={handleToggleWishlist}
                   onQuickAdd={handleQuickAdd}
                   onSelectProduct={handleSelectProduct}
+                />
+              )}
+
+              {route === 'saved' && (
+                <SavedWeavesView
+                  wishlistIds={wishlistIds}
+                  bagCount={bagCount}
+                  onToggleWishlist={handleToggleWishlist}
+                  onClearWishlist={handleClearWishlist}
+                  onMoveToBag={handleMoveSavedToBag}
+                  onMoveAllToBag={handleMoveAllSavedToBag}
+                  onQuickAdd={handleQuickAdd}
+                  onSelectProduct={handleSelectProduct}
+                  onOpenBag={() => setBagDrawerOpen(true)}
+                  onNavigate={handleNavigate}
                 />
               )}
             </motion.div>
@@ -471,6 +660,14 @@ export default function App() {
           }}
         />
 
+        <OrderQueryModal
+          order={queryModalOrder}
+          authToken={authToken}
+          currentUser={currentUser}
+          onClose={() => setQueryModalOrder(null)}
+          onQueryLogged={handleQueryLogged}
+        />
+
         <AnimatePresence>
           {toast && (
             <motion.div
@@ -485,6 +682,18 @@ export default function App() {
             >
               <Check className="w-4 h-4 text-accent shrink-0" />
               <span className="font-body text-sm">{toast.message}</span>
+              {toast.actionLabel && toast.onAction && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.onAction?.();
+                    setToast(null);
+                  }}
+                  className="ml-auto pl-2 font-label text-xs font-medium text-accent hover:underline whitespace-nowrap shrink-0"
+                >
+                  {toast.actionLabel}
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

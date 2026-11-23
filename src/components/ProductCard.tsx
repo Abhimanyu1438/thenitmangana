@@ -3,6 +3,10 @@ import { Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
 import { formatINR } from '../data/catalog';
+import {
+  PRODUCT_CARD_VIEWPORT,
+  getProductCardRevealVariants,
+} from '../lib/motion';
 import { ResilientImage } from './ResilientImage';
 
 interface ProductCardProps {
@@ -12,6 +16,7 @@ interface ProductCardProps {
   onQuickAdd: (product: Product) => void;
   onSelectProduct: (productId: string) => void;
   showInteractiveControls?: boolean;
+  revealIndex?: number;
 }
 
 export function ProductCard({
@@ -21,13 +26,19 @@ export function ProductCard({
   onQuickAdd,
   onSelectProduct,
   showInteractiveControls = true,
+  revealIndex = 0,
 }: ProductCardProps) {
   const [loadBackImage, setLoadBackImage] = useState(false);
   const [selectedShadeIndex, setSelectedShadeIndex] = useState(0);
   const activeShade = product.shades[selectedShadeIndex] || product.shades[0];
+  const revealVariants = getProductCardRevealVariants(revealIndex);
 
   return (
-    <article
+    <motion.article
+      variants={revealVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={PRODUCT_CARD_VIEWPORT}
       className="group flex flex-col"
       onMouseEnter={() => setLoadBackImage(true)}
       onFocus={() => setLoadBackImage(true)}
@@ -150,6 +161,6 @@ export function ProductCard({
           )}
         </footer>
       )}
-    </article>
+    </motion.article>
   );
 }
