@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { IMAGES } from '../data/catalog';
 import { SILK_EASE } from '../lib/motion';
 import { PageRoute } from '../types';
-import { ResilientImage } from './ResilientImage';
+import { BrandLogo } from './BrandLogo';
 
 interface FooterProps {
   onNavigate: (route: PageRoute, opts?: { weave?: string; occasion?: string }) => void;
@@ -47,13 +46,10 @@ export function Footer({ onNavigate }: FooterProps) {
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className="self-start focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
+              aria-label="The Nitmagnaa Weaves Home"
+              className="self-start focus-visible:outline-2 focus-visible:outline-accent rounded-sm transition-opacity hover:opacity-90"
             >
-              <ResilientImage
-                src={IMAGES.logo}
-                alt="The Nitmagnaa Weaves"
-                className="w-[210px] min-h-[42px] h-auto object-contain"
-              />
+              <BrandLogo />
             </button>
             <p className="font-body text-sm text-on-surface-walnut/80 max-w-xs leading-relaxed">
               Contemporary Indian handloom house dedicated to quiet luxury, natural fibers, and living weaving traditions.

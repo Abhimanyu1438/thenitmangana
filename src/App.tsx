@@ -51,12 +51,27 @@ const DEFAULT_BAG_ITEM: BagItem = {
   quantity: 1,
 };
 
+function repairItemImage(item: BagItem): BagItem {
+  if (
+    !item.image ||
+    item.image.includes('lh3.googleusercontent.com') ||
+    item.image.startsWith('/src/assets/images/')
+  ) {
+    const matched = PRODUCTS.find((p) => p.id === item.productId);
+    return {
+      ...item,
+      image: matched ? matched.frontImage : PRODUCTS[0].frontImage,
+    };
+  }
+  return item;
+}
+
 function loadInitialBag(): BagItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.bag);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return parsed.map(repairItemImage);
     }
   } catch {
     // ignore storage errors
@@ -96,10 +111,15 @@ function loadInitialOrders(): OrderRecord[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const valid = parsed.filter(
-          (item): item is OrderRecord =>
-            Boolean(item && item.orderNumber && Array.isArray(item.items) && item.statusStep)
-        );
+        const valid = parsed
+          .filter(
+            (item): item is OrderRecord =>
+              Boolean(item && item.orderNumber && Array.isArray(item.items) && item.statusStep)
+          )
+          .map((ord) => ({
+            ...ord,
+            items: ord.items.map(repairItemImage),
+          }));
         const existingNumbers = new Set(valid.map((o) => o.orderNumber));
         const missingSamples = SAMPLE_ORDERS.filter(
           (s) => !existingNumbers.has(s.orderNumber)

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Menu, Search, ShoppingBag, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { IMAGES } from '../data/catalog';
 import { SILK_EASE } from '../lib/motion';
 import { PageRoute } from '../types';
-import { ResilientImage } from './ResilientImage';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   currentRoute: PageRoute;
@@ -140,13 +139,9 @@ export function Header({
             type="button"
             onClick={() => onNavigate('home')}
             aria-label="The Nitmagnaa Weaves Home"
-            className="justify-self-center inline-flex items-center justify-center h-[52px] md:h-[60px] overflow-hidden px-1 sm:px-2 shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded-sm transition-opacity hover:opacity-90"
+            className="justify-self-center inline-flex items-center justify-center px-1 sm:px-2 py-1 shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded-sm transition-opacity hover:opacity-90"
           >
-            <ResilientImage
-              src={IMAGES.logo}
-              alt="The Nitmagnaa Weaves"
-              className="w-[164px] sm:w-[216px] md:w-[260px] h-auto object-contain"
-            />
+            <BrandLogo />
           </button>
 
           {/* Zone 3: Right (Private Styling + Search + Bag) */}
@@ -221,11 +216,7 @@ export function Header({
             >
               <div>
                 <div className="flex items-center justify-between pb-6 border-b border-on-surface-walnut/20">
-                  <ResilientImage
-                    src={IMAGES.logo}
-                    alt="The Nitmagnaa Weaves"
-                    className="w-[172px] h-auto object-contain"
-                  />
+                  <BrandLogo className="scale-90 origin-left" />
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
